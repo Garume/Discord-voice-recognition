@@ -24,6 +24,7 @@ class MyVoiceClient(VoiceClient):
         super().__init__(client, channel)
         self.record_task = None
         self.decoder = None
+        self.is_recording = False
 
     #---------- record ----------------
     async def record(self,record_time=30):
@@ -34,13 +35,13 @@ class MyVoiceClient(VoiceClient):
         self.is_recording = True
         self.decoder = BufferDecoder()
         
-        self.record_task = self.loop.create_task(self.recv_voice_packet)
+        self.record_task = self.loop.create_task(self.recv_voice_packet())
         await asyncio.sleep(record_time)
 
         self.record_task.cancel()
 
         self.record_task = None
-        self.is_recording = True
+        self.is_recording = False
 
     #---------- packet ----------------
     async def recv_voice_packet(self):

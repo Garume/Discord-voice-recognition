@@ -33,6 +33,11 @@ async def on_message(message):
         await message.guild.voice_client.disconnect()
         await message.channel.send("接続しました")
     
+    if message.content == "!record":
+        if message.guild.voice_client is None:
+            await message.channel.send("接続していません")
+        await message.guild.voice_client.record()
+        await message.channel.send("レコードを開始します")
     await bot.process_commands(message)
 
 bot.run(TOKEN)
