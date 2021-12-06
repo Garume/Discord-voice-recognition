@@ -1,6 +1,8 @@
+import asyncio
 from discord import VoiceClient
 from discord.gateway import DiscordVoiceWebSocket
 import nacl.secret
+from PacketQueue import BufferDecoder
 
 from RTCPacket import RTCPacket
 
@@ -21,7 +23,26 @@ class MyVoiceClient(VoiceClient):
     def __init__(self, client, channel):
         super().__init__(client, channel)
         self.record_task = None
-    
+        self.decoder = None
+
+    #---------- record ----------------
+    async def record(self,record_time=30):
+        if self.is_recording:
+            raise ValueError("Already recording")
+        
+        self.decoder= None
+        self.is_recording = True
+        self.decoder = BufferDecoder()
+        
+        self.record_task = self.loop.create_task(self.recv_voice_packet)
+        await asyncio.sleep(record_time)
+
+        self.record_task.cancel()
+
+        self.record_task = None
+        self.is_recording = True
+
+    #---------- packet ----------------
     async def recv_voice_packet(self):
         print("aaa")
         if not self.ws.record_ready:
@@ -37,8 +58,12 @@ class MyVoiceClient(VoiceClient):
             decrypt_func = getattr(self,f'decrypt_{self.mode}')
             header,data = decrypt_func(recv)
             packet = RTCPacket(header,data)
+            packet.set_real_time()
+            packet.calc_extension_header_length()
+            
+            self.decoder.recv_packet(packet)
 
-
+    #---------- connect to vc socket ----------------
     async def connect_websocket(self) -> MyVoiceWebSocket:
         ws = await MyVoiceWebSocket.from_client(self)
         self._connected.clear()
