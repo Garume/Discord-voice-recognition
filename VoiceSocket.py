@@ -27,7 +27,7 @@ class MyVoiceClient(VoiceClient):
         self.is_recording = False
 
     #---------- record ----------------
-    async def record(self,record_time=30):
+    async def record(self,record_time=5):
         if self.is_recording:
             raise ValueError("Already recording")
         
@@ -42,6 +42,13 @@ class MyVoiceClient(VoiceClient):
 
         self.record_task = None
         self.is_recording = False
+        
+        audio = self.decoder.decode()
+        print(type(audio))
+        with open("test.txt",mode = "w") as f:
+            f.write(audio)
+            
+        return self.decoder.decode()
 
     #---------- packet ----------------
     async def recv_voice_packet(self):
@@ -52,7 +59,6 @@ class MyVoiceClient(VoiceClient):
         
         while True:
             recv = await self.loop.sock_recv(self.socket,2**16)
-            print(recv)
 
             if 200 <= recv[1] < 205:
                 continue
