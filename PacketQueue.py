@@ -11,7 +11,10 @@ class PacketQueue:
     
     def push(self,packet):
         self.queues[packet.ssrc].append(packet)
+        print(packet.ssrc,packet.real_time,packet.timestamp)
     
+    def all_del(self):
+        self.queues = []
 #----------- ssrc packet -----------
     def get_all_ssrc(self):
         return self.queues.keys()
@@ -51,10 +54,15 @@ class BufferDecoder:
     def recv_packet(self,packet):
         self.queue.push(packet)
     
+    def del_all_qurue(self):
+        self.queue = []
+
     async def _decode(self,ssrc):
         decoder = Decoder()
         pcm = []
         start_time = None
+        nc_start_time = None
+        start_flag = True
         last_timestamp = None
 
         for packet in self.queue.get_packets(ssrc):
@@ -67,9 +75,20 @@ class BufferDecoder:
                 pcm += data
                 last_timestamp = None
                 continue
+            
+            if start_flag:
+                if nc_start_time is None:
+                    nc_start_time = packet.real_time
+                elif packet.real_time - nc_start_time < 0.05:
+                    continue
+                else:
+                    start_flag = False
+                continue
 
+            print(packet.real_time)
             if start_time is None:
                 start_time = packet.real_time
+                nc_start_time=start_time
             else:
                 start_time = min(packet.real_time, start_time)
 
@@ -80,20 +99,39 @@ class BufferDecoder:
 
             if last_timestamp is not None:
                 elapsed = (packet.timestamp - last_timestamp) / Decoder.SAMPLING_RATE
-                if elapsed > 0.02:
+                if elapsed > 0.03:
                     # 無音期間
-                    margin = [0] * 2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.02) * Decoder.SAMPLING_RATE)
-                    pcm += margin
+                    if elapsed > 1:
+                        elapsed %= 10
+                        elapsed *= 0.11
+                        print("------------------")
+                        print("1無音あり",int(Decoder.SAMPLE_SIZE * (elapsed - 0.1) * Decoder.SAMPLING_RATE))
+                        print(elapsed,packet.timestamp)
+                        margin = [0] * 2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.1) * Decoder.SAMPLING_RATE)
+                        pcm += margin
+                    elif elapsed > 0.1:
+                        elapsed *= 0.1
+                        print("------------------")
+                        print("2無音あり",int(Decoder.SAMPLE_SIZE * (elapsed - 0.01) * Decoder.SAMPLING_RATE))
+                        print(elapsed,packet.timestamp)
+                        margin = [0] * 2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.01) * Decoder.SAMPLING_RATE)
+                        pcm += margin                        
+                    else:
+                        print("------------------")
+                        print("3無音あり",int(Decoder.SAMPLE_SIZE * (elapsed - 0.03) * Decoder.SAMPLING_RATE))
+                        print(elapsed,packet.timestamp)
+                        margin = [0] * 2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.03) * Decoder.SAMPLING_RATE)
+                        pcm += margin                       
 
             data = decoder.decode_float(packet.decrypted)
             pcm += data
             last_timestamp = packet.timestamp
 
         del decoder
+        ssrc_dict = dict(data=pcm, start_time=start_time)
+        #print(ssrc_dict)
 
-        print(dict)
-        
-        return dict(data=pcm, start_time=start_time)
+        return ssrc_dict
 
     async def decode(self):
         file = BytesIO()
@@ -110,6 +148,9 @@ class BufferDecoder:
 
         pcm_list.sort(key=lambda x: x["start_time"])
 
+        for i in pcm_list:
+            print(i["start_time"])
+
         if not pcm_list:
             # 音声がなかった場合
             wav.close()
@@ -119,6 +160,7 @@ class BufferDecoder:
         first_time = pcm_list[0]["start_time"]
         for pcm in pcm_list:
             # 録音が始まった時刻からのマージンをつける
+            print(pcm["start_time"] - first_time)
             pcm["data"] = [0] * int(48000 * 2 * (pcm["start_time"] - first_time)) + pcm["data"]
 
         right_channel = []
@@ -191,7 +233,8 @@ class BufferDecoder:
         w.close
         file.seek(0)
 
-        print(file.getvalue())
+        del self.queue
+        #print(file.getvalue())
         print(type(file))
         print("デコードを終了します")
         return file

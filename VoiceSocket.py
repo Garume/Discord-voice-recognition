@@ -44,15 +44,15 @@ class MyVoiceClient(VoiceClient):
         self.is_recording = False
         
         audio = await self.decoder.decode()
-        print(audio.getvalue())
         with open("test.bin",mode = "wb") as f:
             f.write(audio.getvalue())
-            
+        
+        self.decoder.del_all_qurue()
+
         return audio
 
     #---------- packet ----------------
     async def recv_voice_packet(self):
-        print("aaa")
         if not self.ws.record_ready:
             print("Not Record Ready")
             raise ValueError("Not Record Ready")
@@ -68,7 +68,11 @@ class MyVoiceClient(VoiceClient):
             packet.set_real_time()
             packet.calc_extension_header_length()
             
-            self.decoder.recv_packet(packet)
+            if self.is_recording:
+                self.decoder.recv_packet(packet)
+            else:
+                del packet
+                pass
 
     #---------- connect to vc socket ----------------
     async def connect_websocket(self) -> MyVoiceWebSocket:

@@ -38,8 +38,8 @@ async def on_message(message):
             await message.channel.send("接続していません")
         await message.channel.send("レコードを開始します")
         audio = await message.guild.voice_client.record()
-        file = discord.File(audio)
-        await message.channel.send(content="レコードを終了します",file = file)
+        file = discord.File(audio,filename="test.wav")
+        await message.channel.send(file = file)
         await message.channel.send("レコードを終了します")
 
     await bot.process_commands(message)
