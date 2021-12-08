@@ -37,7 +37,9 @@ async def on_message(message):
         if message.guild.voice_client is None:
             await message.channel.send("接続していません")
         await message.channel.send("レコードを開始します")
-        await message.guild.voice_client.record()
+        audio = await message.guild.voice_client.record()
+        file = discord.File(audio)
+        await message.channel.send(content="レコードを終了します",file = file)
         await message.channel.send("レコードを終了します")
 
     await bot.process_commands(message)

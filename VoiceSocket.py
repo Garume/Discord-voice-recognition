@@ -43,12 +43,12 @@ class MyVoiceClient(VoiceClient):
         self.record_task = None
         self.is_recording = False
         
-        audio = self.decoder.decode()
-        print(type(audio))
-        with open("test.txt",mode = "w") as f:
-            f.write(audio)
+        audio = await self.decoder.decode()
+        print(audio.getvalue())
+        with open("test.bin",mode = "wb") as f:
+            f.write(audio.getvalue())
             
-        return self.decoder.decode()
+        return audio
 
     #---------- packet ----------------
     async def recv_voice_packet(self):

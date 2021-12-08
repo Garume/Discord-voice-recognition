@@ -38,7 +38,8 @@ def _load_default():
             _lib = libopus_loader(_filename)
         else:
             _lib = libopus_loader(ctypes.util.find_library('opus'))
-    except Exception:
+    except Exception as e:
+        print("opus_libの読み込みに失敗しました",e)
         _lib = None   
     
     return _lib is not None

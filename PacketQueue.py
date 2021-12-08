@@ -103,6 +103,8 @@ class BufferDecoder:
         wav.setframerate(Decoder.SAMPLING_RATE)
         pcm_list = []
 
+        print("デコードを開始します")
+
         for ssrc in self.queue.get_all_ssrc():
             pcm_list.append(await self._decode(ssrc))
 
@@ -180,6 +182,16 @@ class BufferDecoder:
 
         wav.writeframes(audio.tobytes())
         wav.close()
+        
+        w = wave.Wave_write("test.wav")
+        w.setnchannels(Decoder.CHANNELS)
+        w.setsampwidth(Decoder.SAMPLE_SIZE // Decoder.CHANNELS)
+        w.setframerate(Decoder.SAMPLING_RATE)
+        w.writeframes(audio.tobytes())
+        w.close
         file.seek(0)
 
+        print(file.getvalue())
+        print(type(file))
+        print("デコードを終了します")
         return file
