@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import dislash
 import json,time,random
+from GenText import getTextwithAudio
 
 from VoiceSocket import MyVoiceClient
 
@@ -36,10 +37,12 @@ async def on_message(message):
     if message.content == "!record":
         if message.guild.voice_client is None:
             await message.channel.send("接続していません")
+            return
         await message.channel.send("レコードを開始します")
         audio = await message.guild.voice_client.record()
         file = discord.File(audio,filename="test.wav")
         await message.channel.send(file = file)
+        await message.channel.send(getTextwithAudio("test.wav"))
         await message.channel.send("レコードを終了します")
 
     await bot.process_commands(message)

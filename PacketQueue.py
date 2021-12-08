@@ -79,7 +79,8 @@ class BufferDecoder:
             if start_flag:
                 if nc_start_time is None:
                     nc_start_time = packet.real_time
-                elif packet.real_time - nc_start_time < 0.05:
+                    pcm += [0]* (48000 * 2)
+                elif packet.real_time - nc_start_time < 0.01:
                     continue
                 else:
                     start_flag = False
