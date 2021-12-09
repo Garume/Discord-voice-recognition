@@ -48,6 +48,7 @@ class MyVoiceClient(VoiceClient):
             f.write(audio.getvalue())
         
         self.decoder.del_all_qurue()
+        self.decoder= None
 
         return audio
 

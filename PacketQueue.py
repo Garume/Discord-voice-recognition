@@ -1,5 +1,6 @@
 from collections import defaultdict
 from io import BytesIO
+from logging import exception
 from OpusDecoder import MyDecoder as Decoder
 from itertools import zip_longest
 import numpy as np
@@ -57,7 +58,7 @@ class BufferDecoder:
     def del_all_qurue(self):
         self.queue = []
 
-    async def _decode(self,ssrc):
+    async def _decode(self,ssrc,time_flag):
         decoder = Decoder()
         pcm = []
         start_time = None
@@ -76,15 +77,15 @@ class BufferDecoder:
                 last_timestamp = None
                 continue
             
-            if start_flag:
-                if nc_start_time is None:
-                    nc_start_time = packet.real_time
-                    pcm += [0]* (48000 * 2)
-                elif packet.real_time - nc_start_time < 0.01:
-                    continue
-                else:
-                    start_flag = False
-                continue
+            #if start_flag and time_flag:
+            #    if nc_start_time is None:
+            #        nc_start_time = packet.real_time
+            #        pcm += [0]* (48000 * 2)
+            #    elif packet.real_time - nc_start_time < 0.01:
+            #        continue
+            #    else:
+            #        start_flag = False
+            #    continue
 
             print(packet.real_time)
             if start_time is None:
@@ -100,15 +101,15 @@ class BufferDecoder:
 
             if last_timestamp is not None:
                 elapsed = (packet.timestamp - last_timestamp) / Decoder.SAMPLING_RATE
-                if elapsed > 0.03:
+                if elapsed > 0.01:
                     # 無音期間
                     if elapsed > 1:
                         elapsed %= 10
-                        elapsed *= 0.11
+                        elapsed *= 0.01
                         print("------------------")
-                        print("1無音あり",int(Decoder.SAMPLE_SIZE * (elapsed - 0.1) * Decoder.SAMPLING_RATE))
+                        print("1無音あり",int(Decoder.SAMPLE_SIZE * (elapsed - 0.01) * Decoder.SAMPLING_RATE))
                         print(elapsed,packet.timestamp)
-                        margin = [0] * 2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.1) * Decoder.SAMPLING_RATE)
+                        margin = [0] * 2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.01) * Decoder.SAMPLING_RATE)
                         pcm += margin
                     elif elapsed > 0.1:
                         elapsed *= 0.1
@@ -141,13 +142,21 @@ class BufferDecoder:
         wav.setsampwidth(Decoder.SAMPLE_SIZE // Decoder.CHANNELS)
         wav.setframerate(Decoder.SAMPLING_RATE)
         pcm_list = []
+        time_flag = True
 
         print("デコードを開始します")
 
         for ssrc in self.queue.get_all_ssrc():
-            pcm_list.append(await self._decode(ssrc))
+            pcm = await self._decode(ssrc,time_flag)
+            if time_flag:
+                time_flag = False
+            pcm_list.append(pcm)
 
-        pcm_list.sort(key=lambda x: x["start_time"])
+
+        try:
+            pcm_list.sort(key=lambda x: x["start_time"])
+        except Exception as e:
+            print("ソートに失敗しました\n",e)
 
         for i in pcm_list:
             print(i["start_time"])
@@ -161,9 +170,11 @@ class BufferDecoder:
         first_time = pcm_list[0]["start_time"]
         for pcm in pcm_list:
             # 録音が始まった時刻からのマージンをつける
-            print(pcm["start_time"] - first_time)
-            pcm["data"] = [0] * int(48000 * 2 * (pcm["start_time"] - first_time)) + pcm["data"]
-
+            try:
+                print(pcm["start_time"] - first_time)
+                pcm["data"] = [0] * int(3000 * (pcm["start_time"] - first_time)) + pcm["data"]
+            except Exception as e:
+                print("パケットの開始時間を取得できませんでした\n全パケットが壊れている可能性があります",e)
         right_channel = []
         left_channel = []
 
