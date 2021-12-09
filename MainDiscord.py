@@ -4,13 +4,13 @@ import dislash
 import json,time,random
 
 from numpy import e, record
-from GenText import getTextwithAudio
+from voicerecognition.GenText import getTextwithAudio
 
-from VoiceSocket import MyVoiceClient
-from Youtube_search import Youtube_Serch
-from Ytdl import YTDLSource
+from voicerecognition.VoiceSocket import MyVoiceClient
+from youtubeUtil.Youtube_search import Youtube_Serch
+from youtubeUtil.Ytdl import YTDLSource
 
-with open("env.json","r") as file:
+with open("util/env.json","r") as file:
     TOKEN = json.load(file)["token"]
 
 bot = commands.Bot(
@@ -21,7 +21,7 @@ def check_str(text,check):
     return check in text
 
 def check_title(text):
-    if check_str(text,"ドットプレイ") or check_str(text,"ホットプレイ") or check_str(text,"ホットプレー"):
+    if check_str(text,"ドットプレイ") or check_str(text,"ホットプレイ") or check_str(text,"ホットプレー") or check_str(text,"ウッドプレイ"):
         return [True,7]
     elif check_str(text,"ホットプレート"):
         return [True,8]
@@ -30,7 +30,7 @@ def check_title(text):
     elif check_str(text,"夫 プレイ"):
         print(text[4:])
         return [True,6]
-    elif check_str(text,"すとぷり"):
+    elif check_str(text,"すとぷり") or check_str(text,"Play"):
         return [True,5]
     elif check_str(text,"プレイ"):
         return [True,4]
@@ -49,7 +49,7 @@ async def on_message(message):
             return
         await message.author.voice.channel.connect(cls=MyVoiceClient)
         await message.channel.send("接続しました")
-        message.guild.voice_client.play(discord.FFmpegPCMAudio("start.wav"))
+        message.guild.voice_client.play(discord.FFmpegPCMAudio("util/start.wav"))
 
     if message.content == "!leave":
         if message.guild.voice_client is None:
@@ -72,7 +72,7 @@ async def on_message(message):
         audio = await message.guild.voice_client.record(record_time)
         file = discord.File(audio,filename="test.wav")
         await message.channel.send(file = file)
-        await message.channel.send(getTextwithAudio("test.wav"))
+        await message.channel.send(getTextwithAudio("util/test.wav"))
         await message.channel.send("レコードを終了します")
         message.guild.voice_client.stop()
     

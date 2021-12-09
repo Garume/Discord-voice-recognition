@@ -8,7 +8,7 @@ class Youtube_Serch:
         self.API_KEY = self.read_key()
     
     def read_key(self):
-        with open("env.json","r") as file:
+        with open("util/env.json","r") as file:
             API = json.load(file)["youtube_api"]
         return API
 

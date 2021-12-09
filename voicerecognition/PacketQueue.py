@@ -1,7 +1,7 @@
 from collections import defaultdict
 from io import BytesIO
 from logging import exception
-from OpusDecoder import MyDecoder as Decoder
+from voicerecognition.OpusDecoder import MyDecoder as Decoder
 from itertools import zip_longest
 import numpy as np
 import wave
@@ -236,8 +236,8 @@ class BufferDecoder:
 
         wav.writeframes(audio.tobytes())
         wav.close()
-        
-        w = wave.Wave_write("test.wav")
+
+        w = wave.Wave_write("util/test.wav")
         w.setnchannels(Decoder.CHANNELS)
         w.setsampwidth(Decoder.SAMPLE_SIZE // Decoder.CHANNELS)
         w.setframerate(Decoder.SAMPLING_RATE)

@@ -2,9 +2,9 @@ import asyncio
 from discord import VoiceClient
 from discord.gateway import DiscordVoiceWebSocket
 import nacl.secret
-from PacketQueue import BufferDecoder
+from voicerecognition.PacketQueue import BufferDecoder
 
-from RTCPacket import RTCPacket
+from voicerecognition.RTCPacket import RTCPacket
 
 class MyVoiceWebSocket(DiscordVoiceWebSocket):
     def __init__(self, socket, loop):
@@ -44,7 +44,7 @@ class MyVoiceClient(VoiceClient):
         self.is_recording = False
         
         audio = await self.decoder.decode()
-        with open("test.bin",mode = "wb") as f:
+        with open("util/test.bin",mode = "wb") as f:
             f.write(audio.getvalue())
         
         self.decoder.del_all_qurue()
