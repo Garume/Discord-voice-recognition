@@ -60,7 +60,6 @@ class MyVoiceClient(VoiceClient):
         
         while True:
             recv = await self.loop.sock_recv(self.socket,2**16)
-
             if 200 <= recv[1] < 205:
                 continue
             decrypt_func = getattr(self,f'decrypt_{self.mode}')

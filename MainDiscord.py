@@ -46,6 +46,7 @@ async def on_ready():
     print("on_ready")
     print(discord.__version__)
 
+#----------------------------------------------------------
 @inter_client.slash_command(
     name = "dice",
     description = "サイコロを振ります",
@@ -59,11 +60,11 @@ async def dice(bot,dice_count=None,dice_max=None):
     for _ in range(dice_count):
         cnt.append(str(random.randint(1,dice_max)))
     await bot.reply(" ".join(cnt))
-
+#----------------------------------------------------------
 @inter_client.slash_command(description="Sends Hello")
 async def hello(interaction):
     await interaction.reply("Hello!")
-
+#----------------------------------------------------------
 @inter_client.slash_command(
     name = "join",
     description = "入室します"
@@ -75,7 +76,7 @@ async def join(bot):
     await bot.author.voice.channel.connect(cls=MyVoiceClient)
     await bot.send("接続しました")
     bot.guild.voice_client.play(discord.FFmpegPCMAudio("util/start.wav"))
-
+#----------------------------------------------------------
 @inter_client.slash_command(
     name = "leave",
     description = "退室します"   
@@ -85,8 +86,8 @@ async def leave(bot):
         await bot.send("接続していません")
         return
     await bot.guild.voice_client.disconnect()
-    await bot.send("接続しました")
-
+    await bot.send("抜けました")
+#----------------------------------------------------------
 @inter_client.slash_command(
     name = "stop",
     description = "音楽を止めます"
@@ -97,15 +98,14 @@ async def stop(Bot):
         await Bot.send("接続していません。")
         return
 
-    # 再生中ではない場合は実行しない
     if not Bot.guild.voice_client.is_playing():
         await Bot.send("再生していません。")
         return
 
     Bot.guild.voice_client.stop()
-    await Bot.change_presence(activity=discord.Game("音想世界"))
+    await bot.change_presence(activity=discord.Game("音想世界"))
     await Bot.send("ストップしました。")
-
+#----------------------------------------------------------
 @inter_client.slash_command(
     name = "record",
     description = "VCを録音します",   
@@ -127,6 +127,38 @@ async def record(Bot,record_time=5):
     await Bot.send(file = file)
     await Bot.send(getTextwithAudio("util/test.wav"))
     Bot.guild.voice_client.stop()
+#----------------------------------------------------------
+@inter_client.slash_command(
+    name = "sound",
+    description = "VCで音楽を流します",   
+    options = [
+        Option("record_time","秒数を決めてね",OptionType.INTEGER)
+    ]
+)
+async def sound(Bot,record_time=5):
+    if Bot.guild.voice_client is None:
+        await Bot.send("接続していません")
+        return
+    await Bot.guild.voice_client.disconnect()
+    time.sleep(0.08)
+    await Bot.author.voice.channel.connect(cls=MyVoiceClient)
+    await Bot.send("{}秒でレコードを開始します".format(record_time))
+    async with Bot.channel.typing(): # 送られてきたチャンネルで入力中と表示させる
+        audio = await Bot.guild.voice_client.record(record_time)
+        file = discord.File(audio,filename="test.wav")
+    Bot.guild.voice_client.stop()
+    await Bot.send(file = file)
+    title = getTextwithAudio("util/test.wav")
+    print(title)
+    video = Youtube_Serch().youtube_search(title)
+    player = await YTDLSource.from_url(video[1], loop=bot.loop,stream=True)
+    Bot.guild.voice_client.play(player)
+    Bot.guild.voice_client.pause()
+    Bot.guild.voice_client.resume()
+    print(video)
+    await bot.change_presence(activity=discord.Game(video[0]))
+    await Bot.send('{} を再生します。'.format(video[0]))
+#----------------------------------------------------------
 
 @bot.event
 async def on_message(message):

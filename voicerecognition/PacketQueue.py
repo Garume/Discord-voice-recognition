@@ -95,13 +95,12 @@ class BufferDecoder:
                 start_time = min(packet.real_time, start_time)
 
             if len(packet.decrypted) < 10:
-                # パケットがdiscordから送られてくる無音のデータだった場合: https://discord.com/developers/docs/topics/voice-connections#voice-data-interpolation
                 last_timestamp = packet.timestamp
                 continue
 
             if last_timestamp is not None:
                 elapsed = (packet.timestamp - last_timestamp) / Decoder.SAMPLING_RATE
-                if elapsed > 0.01:
+                if elapsed > 0.03:
                     # 無音期間
                     if elapsed > 1:
                         elapsed %= 10
@@ -126,6 +125,8 @@ class BufferDecoder:
                         pcm += margin                       
 
             data = decoder.decode_float(packet.decrypted)
+
+            print(data)
             pcm += data
             last_timestamp = packet.timestamp
 
@@ -162,11 +163,9 @@ class BufferDecoder:
             print(i["start_time"])
 
         if not pcm_list:
-            # 音声がなかった場合
             wav.close()
             file.seek(0)
             return file
-        # 録音が始まった時刻
         first_time = pcm_list[0]["start_time"]
         for pcm in pcm_list:
             # 録音が始まった時刻からのマージンをつける
@@ -246,7 +245,7 @@ class BufferDecoder:
         file.seek(0)
 
         del self.queue
-        #print(file.getvalue())
+        print(file.getvalue())
         print(type(file))
         print("デコードを終了します")
         return file
